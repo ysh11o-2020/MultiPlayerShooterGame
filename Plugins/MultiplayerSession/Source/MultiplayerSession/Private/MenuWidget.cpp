@@ -38,6 +38,10 @@ void UMenuWidget::MenuSetup(int32 MaxConnectionsNum, FString MatchTypeStr)
 	if(MultiplayerSessionSubsystem)
 	{
 		MultiplayerSessionSubsystem->MultiplayerCreateSessionCompleted.AddDynamic(this,&UMenuWidget::OnCreateSessionComplete);
+		MultiplayerSessionSubsystem->MultiplayerFindSessionCompleted.AddUObject(this,&UMenuWidget::OnFindSessionComplete);
+		MultiplayerSessionSubsystem->MultiplayerJoinSessionCompleted.AddUObject(this,&UMenuWidget::OnJoinSessionComplete);
+		MultiplayerSessionSubsystem->MultiplayerDestroySessionCompleted.AddDynamic(this,&UMenuWidget::OnDestroySessionComplete);
+		MultiplayerSessionSubsystem->MultiplayerStartSessionCompleted.AddDynamic(this,&UMenuWidget::OnStartSessionCompltet);
 	}
 }
 
@@ -75,11 +79,6 @@ void UMenuWidget::OnHostButtonClicked()
 	if(MultiplayerSessionSubsystem)
 	{
 		MultiplayerSessionSubsystem->CreateSession(MaxConnections,MatchType);
-		UWorld* World = GetWorld();
-		if(World)
-		{
-			World->ServerTravel(FString("/Game/Map/LobbyMap?listen"));
-		}
 	}
 }
 
@@ -94,11 +93,67 @@ void UMenuWidget::OnJoinButtonClicked()
 			TEXT("Join button is clicked")
 		);
 	}
+	if(MultiplayerSessionSubsystem)
+	{
+		MultiplayerSessionSubsystem->FindSession(10000);
+	}
+}
+
+void UMenuWidget::OnFindSessionComplete(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
+{
+	if(MultiplayerSessionSubsystem == nullptr)
+	{
+		return;
+	}
+	
+	for(FOnlineSessionSearchResult SessionResult:SessionResults)
+	{
+		FString SessionValue;
+		SessionResult.Session.SessionSettings.Get(FName("MatchType"),SessionValue);
+		if(SessionValue == MatchType)
+		{
+			MultiplayerSessionSubsystem->JoinSession(SessionResult);
+			//find one room & join(for template)
+			return;
+		}
+	}
+}
+
+void UMenuWidget::OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if(Subsystem)
+	{
+		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
+		if(SessionInterface.IsValid())
+		{
+			FString Address;
+			SessionInterface->GetResolvedConnectString(NAME_GameSession,Address);
+			APlayerController* MyPC = GetGameInstance()->GetFirstLocalPlayerController();
+			if(MyPC)
+			{
+				MyPC->ClientTravel(Address,TRAVEL_Absolute);
+			}
+		}
+	}
+}
+
+void UMenuWidget::OnDestroySessionComplete_Implementation(bool bWasSuccessful)
+{
 }
 
 void UMenuWidget::OnCreateSessionComplete_Implementation(bool bWasSuccessful)
 {
+	UWorld* World = GetWorld();
+	if(World && bWasSuccessful)
+	{
+		World->ServerTravel(FString("/Game/Map/LobbyMap?listen"));
+	}
 	//Implement in blueprint
+}
+
+void UMenuWidget::OnStartSessionCompltet_Implementation(bool bWasSuccessful)
+{
 }
 
 void UMenuWidget::MenuTearDown()

@@ -9,6 +9,10 @@
 #include "MultiplayerSessionSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerCreateSessionCompleted,bool,bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerFindSessionCompleted,const TArray<FOnlineSessionSearchResult>& SessionResults,bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerJoinSessionCompleted,EOnJoinSessionCompleteResult::Type Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerDestroySessionCompleted,bool,bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerStartSessionCompleted,bool,bWasSuccessful);
 
 /**
  * 
@@ -27,8 +31,12 @@ public:
 	void DestroySession();
 	void StartSession();
 
-	UPROPERTY()
+	/** Delegates for Menu class to bind Callbacks to */
 	FMultiplayerCreateSessionCompleted MultiplayerCreateSessionCompleted;
+	FMultiplayerFindSessionCompleted MultiplayerFindSessionCompleted;
+	FMultiplayerJoinSessionCompleted MultiplayerJoinSessionCompleted;
+	FMultiplayerDestroySessionCompleted MultiplayerDestroySessionCompleted;
+	FMultiplayerStartSessionCompleted MultiplayerStartSessionCompleted;
 	
 protected:
 	/** Callback Function */
@@ -41,6 +49,7 @@ protected:
 private:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
+	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 	
 	/** Delegate */
 	FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;

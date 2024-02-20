@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "MenuWidget.generated.h"
 
 class UMultiplayerSessionSubsystem;
@@ -28,8 +29,18 @@ protected:
 	UFUNCTION()
 	void OnJoinButtonClicked();
 
-	UFUNCTION(BlueprintCallable,BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent)
 	void OnCreateSessionComplete(bool bWasSuccessful);
+	
+	void OnFindSessionComplete(const TArray<FOnlineSessionSearchResult>& SessionResults,bool bWasSuccessful);
+	
+	void OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void OnDestroySessionComplete(bool bWasSuccessful);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void OnStartSessionCompltet(bool bWasSuccessful);
 	
 private:
 	UPROPERTY(meta=(BindWidget))
